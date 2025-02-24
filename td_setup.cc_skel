@@ -1,0 +1,110 @@
+#!/bin/bash
+
+# 获取当前工作目录的绝对路径
+PWD_DIR=$(pwd)
+
+# 判断传入的参数
+case "$1" in
+  # 默认执行所有操作
+  "")
+    # 编译 ta.c
+    gcc @taname@.c -o @taname@
+    if [ $? -ne 0 ]; then
+      echo "编译 @taname@.c 失败"
+      exit 1
+    fi
+
+    # 克隆 tdx 仓库
+    git clone https://github.com/canonical/tdx.git
+    if [ $? -ne 0 ]; then
+      echo "克隆 tdx 仓库失败"
+      exit 1
+    fi
+
+    # 创建 tdx 镜像
+    cd "$PWD_DIR/tdx/guest-tools/image"
+    sudo ./create-td-image.sh -v 24.04
+    if [ $? -ne 0 ]; then
+      echo "创建 tdx 镜像失败"
+      exit 1
+    fi
+
+    # 使用 virt-customize 上传 ta 文件
+    virt-customize -a "$PWD_DIR/tdx/guest-tools/image/centos.qcow2" --upload "$PWD_DIR/@taname@:/home/tdx/"
+    if [ $? -ne 0 ]; then
+      echo "上传 @taname@ 文件失败"
+      exit 1
+    fi
+
+    # 运行 td.sh 脚本
+    sudo ./run_td.sh
+    if [ $? -ne 0 ]; then
+      echo "运行 td.sh 失败"
+      exit 1
+    fi
+
+    echo "所有操作成功完成"
+    ;;
+
+  # 执行上传 ta 文件
+  upload)
+    if [ -z "$2" ] || [ -z "$3" ]; then
+      echo "缺少参数，正确用法：./td_setup upload <文件名> <镜像内部路径>"
+      exit 1
+    fi
+    FILE_NAME=$2
+    INTERNAL_PATH=$3
+
+    virt-customize -a "$PWD_DIR/tdx/guest-tools/image/centos.qcow2" --upload "$PWD_DIR/$FILE_NAME:$INTERNAL_PATH"
+    if [ $? -ne 0 ]; then
+      echo "上传 ta 文件失败"
+      exit 1
+    fi
+
+    echo "上传文件 $FILE_NAME 到 $INTERNAL_PATH 成功"
+    ;;
+
+  # 运行 td.sh 脚本
+  run)
+    cd "$PWD_DIR/tdx/guest-tools/image"
+    sudo ./run_td.sh
+    if [ $? -ne 0 ]; then
+      echo "运行 td.sh 失败"
+      exit 1
+    fi
+    echo "td.sh 脚本执行成功"
+    ;;
+
+  # 创建 tdx 镜像并删除旧文件
+  image)
+    FILE1="$PWD_DIR/tdx/guest-tools/image/tdx-guest-ubuntu-24.04-generic.qcow2"
+    FILE2="$PWD_DIR/tdx/guest-tools/image/ubuntu-24.04-server-cloudimg-amd64.img"
+    
+    if [ -f "$FILE1" ]; then
+      rm "$FILE1"
+      echo "删除文件: $FILE1"
+    fi
+
+    if [ -f "$FILE2" ]; then
+      rm "$FILE2"
+      echo "删除文件: $FILE2"
+    fi
+
+    # 创建 tdx 镜像
+    cd "$PWD_DIR/tdx/guest-tools/image"
+    sudo ./create-td-image.sh -v 24.04
+    if [ $? -ne 0 ]; then
+      echo "创建 tdx 镜像失败"
+      exit 1
+    fi
+    echo "创建 tdx 镜像成功"
+    ;;
+
+  # 其他未知的命令
+  *)
+    echo "未知命令: $1"
+    echo "可用命令: upload, run, image"
+    exit 1
+    ;;
+esac
+
