@@ -7,8 +7,14 @@ PWD_DIR=$(pwd)
 case "$1" in
   # 默认执行所有操作
   "")
+    gcc ta_server.c -o ta_server -lssh
+    if [ $? -ne 0 ]; then
+      echo "编译 ta_server.c 失败"
+      exit 1
+    fi
+  
     # 编译 ta.c
-    gcc @taname@.c -o @taname@
+    gcc @taname@.c -o @taname@ -lm
     if [ $? -ne 0 ]; then
       echo "编译 @taname@.c 失败"
       exit 1
@@ -30,13 +36,14 @@ case "$1" in
     fi
 
     # 使用 virt-customize 上传 ta 文件
-    virt-customize -a "$PWD_DIR/tdx/guest-tools/image/centos.qcow2" --upload "$PWD_DIR/@taname@:/home/tdx/"
+    sudo virt-customize -a "$PWD_DIR/tdx/guest-tools/image/tdx-guest-ubuntu-24.04-generic.qcow2" --upload "$PWD_DIR/@taname@:/home/tdx/"
     if [ $? -ne 0 ]; then
       echo "上传 @taname@ 文件失败"
       exit 1
     fi
 
     # 运行 td.sh 脚本
+    cd "$PWD_DIR/tdx/guest-tools"
     sudo ./run_td.sh
     if [ $? -ne 0 ]; then
       echo "运行 td.sh 失败"
@@ -55,7 +62,7 @@ case "$1" in
     FILE_NAME=$2
     INTERNAL_PATH=$3
 
-    virt-customize -a "$PWD_DIR/tdx/guest-tools/image/centos.qcow2" --upload "$PWD_DIR/$FILE_NAME:$INTERNAL_PATH"
+    sudo virt-customize -a "$PWD_DIR/tdx/guest-tools/image/tdx-guest-ubuntu-24.04-generic.qcow2" --upload "$PWD_DIR/$FILE_NAME:$INTERNAL_PATH"
     if [ $? -ne 0 ]; then
       echo "上传 ta 文件失败"
       exit 1
@@ -66,7 +73,7 @@ case "$1" in
 
   # 运行 td.sh 脚本
   run)
-    cd "$PWD_DIR/tdx/guest-tools/image"
+    cd "$PWD_DIR/tdx/guest-tools"
     sudo ./run_td.sh
     if [ $? -ne 0 ]; then
       echo "运行 td.sh 失败"

@@ -552,7 +552,7 @@ class ta_server_gen_class
     stream << "    const char *host = \"127.0.0.1\";  // 使用宿主机 IP";
     stream << "\n";
     stream << indent_str;
-    stream << "    int port = 43143;                // 转发到虚拟机的端口";
+    stream << "    int port = 10022;                // 转发到虚拟机的端口";
     stream << "\n";
     stream << indent_str;
     stream << "    const char *user = \"tdx\";       // SSH 用户名";

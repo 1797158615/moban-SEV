@@ -177,7 +177,7 @@ int main() {
     // printf("Waiting for connection...\n");
     //链接虚拟机
     const char *host = "127.0.0.1";  // 使用宿主机 IP
-    int port = 43143;                // 转发到虚拟机的端口
+    int port = 10022;                // 转发到虚拟机的端口
     const char *user = "tdx";       // SSH 用户名
     const char *password = "123456"; // SSH 密码
     const char *command = "cd /home/tdx && ./@taname_run@"; // 要执行的命令
