@@ -24,6 +24,31 @@ setup_image() {
   fi
 
   echo "[+] Customizing SSH settings..."
+  cat <<EOF > user-data
+users:
+  - name: sev
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: false
+    passwd: \$6\$rounds=4096\$salt\$5BZhkL7J94TqY.BuJY7H3E5u5Jv/0v8bQ1JxK8WzJmWlW6sXo1rX6zvZU6jL6dX6sX0jL6dX6sX0jL6dX6sX0
+    shell: /bin/bash
+chpasswd:
+  list: |
+    sev:123456
+    root:123456
+  expire: false
+ssh_pwauth: true
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-custom.conf
+    content: |
+      PasswordAuthentication yes
+      PermitRootLogin yes
+runcmd:
+  - systemctl restart sshd
+EOF
+  echo "instance-id: sev-demo" > meta-data
+  echo "local-hostname: sev-guest" > meta-data
+  genisoimage -output cloud-init.iso -volid cidata -joliet -rock user-data meta-data
+  sudo virt-customize -a ubuntu-sev.qcow2 --root-password password:123456
   sudo virt-customize -a ubuntu-sev.qcow2 --run-command "sed -i 's|[#]*PasswordAuthentication .*|PasswordAuthentication yes|g' /etc/ssh/sshd_config"
   sudo virt-customize -a ubuntu-sev.qcow2 --run-command "sed -i 's|[#]*PermitRootLogin .*|PermitRootLogin yes|g' /etc/ssh/sshd_config"
   sudo virt-customize -a ubuntu-sev.qcow2 --run-command "sed -i 's|[#]*KbdInteractiveAuthentication .*|KbdInteractiveAuthentication yes|g' /etc/ssh/sshd_config"
@@ -78,6 +103,7 @@ run_sev() {
   echo "[+] Starting QEMU with SEV..."
   sudo qemu-system-x86_64 \
     -accel kvm \
+    -drive file="cloud-init.iso",media=cdrom \
     -machine q35,confidential-guest-support=sev0,memory-backend=ram1 \
     -object memory-backend-ram,id=ram1,size=2G,share=on \
     -object sev-guest,id=sev0,cbitpos=47,reduced-phys-bits=1,policy=0x03 \
