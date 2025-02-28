@@ -96,7 +96,7 @@ int main() {
 
     // printf("Waiting for connection...\n");
     //链接虚拟机
-    system("ssh -p 10022 root@@localhost './@taname_run@'");
+    system("ssh -p 10022 root@localhost './ta 40'");
 
     // Accept connection
     client_fd = accept(server_fd, (struct sockaddr *)&addr, &addr_len);
@@ -122,7 +122,7 @@ int main() {
     close(client_fd);
     close(server_fd);
     // printf("Connection closed\n");
-    system("ssh -p 10022 root@@localhost 'shutdown -h now'");
+    system("ssh -p 10022 root@localhost 'shutdown -h now'");
     return 0;
 }
 
