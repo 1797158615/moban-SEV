@@ -45,8 +45,9 @@ write_files:
 runcmd:
   - systemctl restart sshd
 EOF
+
   echo "instance-id: sev-demo" > meta-data
-  echo "local-hostname: sev-guest" > meta-data
+  echo "local-hostname: sev-guest" >> meta-data
   genisoimage -output cloud-init.iso -volid cidata -joliet -rock user-data meta-data
   sudo virt-customize -a ubuntu-sev.qcow2 --root-password password:123456
   sudo virt-customize -a ubuntu-sev.qcow2 --run-command "sed -i 's|[#]*PasswordAuthentication .*|PasswordAuthentication yes|g' /etc/ssh/sshd_config"
